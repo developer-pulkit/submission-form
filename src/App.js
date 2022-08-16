@@ -19,17 +19,17 @@ function App() {
   // Create todo
   const submitHandler = async (e) => {
     e.preventDefault();
-    // if (
-    //   name &&
-    //   id &&
-    //   department &&
-    //   // email &&
-    //   // employmentStatus &&
-    //   // accommodationRequests
-    // ) {
-    //   alert("Please enter a valid input");
-    //   return;
-    // }
+    if (
+      name &&
+      id &&
+      department &&
+      email &&
+      employmentStatus &&
+      accommodationRequests
+    ) {
+      alert("Please enter a valid input");
+      return;
+    }
     await addDoc(collection(db, "requests"), {
       name: name,
       id: id,
