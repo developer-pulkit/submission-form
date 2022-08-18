@@ -1,48 +1,93 @@
 import react, { useEffect, useState } from "react";
 import { Container, Box, Text, Center, Heading } from "@chakra-ui/react";
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react";
-import { addDoc, collection, doc, onSnapshot, query } from "firebase/firestore";
-import { db } from "./firebase";
+import {
+  addDoc,
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  Timestamp,
+} from "firebase/firestore";
+import { toast } from "react-toastify";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { db, storage, auth } from "./firebase";
 import { async } from "@firebase/util";
 import SubmissionForm from "./components/SubmissionForm.jsx";
 import SubmissionLookup from "./components/SubmissionLookup.jsx";
 
 function App() {
   const [requests, setRequests] = useState([]);
-  const [name, setName] = useState();
-  const [id, setId] = useState();
-  const [department, setDepartment] = useState();
-  const [email, setEmail] = useState();
-  const [employmentStatus, setEmploymentStatus] = useState();
-  const [accommodationRequests, setAccommodationRequests] = useState();
+  const [formData, setFormData] = useState({
+    name: "",
+    id: "",
+    department: "",
+    email: "",
+    employmentStatus: "",
+    image: "",
+    accommodationRequests: "",
+    createdAt: Timestamp.now().toDate(),
+  });
 
-  // Create todo
-  const submitHandler = async (e) => {
-    e.preventDefault();
+  const submitHandler = () => {
     if (
-      name &&
-      id &&
-      department &&
-      email &&
-      employmentStatus &&
-      accommodationRequests
+      !formData.name ||
+      !formData.id ||
+      !formData.department ||
+      !formData.employmentStatus ||
+      !formData.employmentStatus ||
+      !formData.accommodationRequests ||
+      !formData.email
     ) {
-      alert("Please enter a valid input");
+      alert("Please fill all the fields");
       return;
     }
-    await addDoc(collection(db, "requests"), {
-      name: name,
-      id: id,
-      department: department,
-      email: email,
-      employmentStatus: employmentStatus,
-      accommodationRequests: accommodationRequests,
-    });
-    setName("");
-    setId("");
-    setAccommodationRequests("");
-    setEmail("");
-    setDepartment("");
+
+    const storageRef = ref(
+      storage,
+      `/images/${Date.now()}${formData.image.name}`
+    );
+
+    const uploadImage = uploadBytesResumable(storageRef, formData.image);
+
+    uploadImage.on(
+      "state_changed",
+      (snapshot) => {
+        const progressPercent = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+      },
+      (err) => {
+        console.log(err);
+      },
+      () => {
+        setFormData({
+          title: "",
+          description: "",
+          image: "",
+        });
+
+        getDownloadURL(uploadImage.snapshot.ref).then((url) => {
+          const articleRef = collection(db, "Articles");
+          addDoc(articleRef, {
+            name: formData.name,
+            id: formData.id,
+            department: formData.department,
+            email: formData.email,
+            employmentStatus: formData.employmentStatus,
+            accommodationRequests: formData.accommodationRequests,
+            document: "",
+            createdAt: Timestamp.now().toDate(),
+          })
+            .then(() => {
+              toast("Article added successfully", { type: "success" });
+            })
+            .catch((err) => {
+              toast("Error adding article", { type: "error" });
+            });
+        });
+      }
+    );
   };
 
   // Read todo from firebase
@@ -95,15 +140,7 @@ function App() {
           </TabList>
           <TabPanels>
             <TabPanel>
-              <SubmissionForm
-                setName={setName}
-                setId={setId}
-                setDepartment={setDepartment}
-                setAccommodationRequests={setAccommodationRequests}
-                setEmail={setEmail}
-                setEmploymentStatus={setEmploymentStatus}
-                submitHandler={submitHandler}
-              />
+              <SubmissionForm formData={formData} setFormData={setFormData} />
             </TabPanel>
             <TabPanel>
               <SubmissionLookup requests={requests} />
