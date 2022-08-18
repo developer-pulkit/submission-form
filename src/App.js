@@ -1,18 +1,17 @@
-import react, { useEffect, useState } from "react";
-import { Container, Box, Text, Center, Heading } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
+import { Container, Box, Center, Heading } from "@chakra-ui/react";
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react";
 import {
   addDoc,
   collection,
-  doc,
   onSnapshot,
   query,
   Timestamp,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { db, storage, auth } from "./firebase";
-import { async } from "@firebase/util";
+import { db, storage } from "./firebase";
+
 import SubmissionForm from "./components/SubmissionForm.jsx";
 import SubmissionLookup from "./components/SubmissionLookup.jsx";
 
@@ -24,9 +23,8 @@ function App() {
     department: "",
     email: "",
     employmentStatus: "",
-    image: "",
     accommodationRequests: "",
-    createdAt: Timestamp.now().toDate(),
+    image: "",
   });
 
   const submitHandler = () => {
@@ -34,10 +32,9 @@ function App() {
       !formData.name ||
       !formData.id ||
       !formData.department ||
+      !formData.email ||
       !formData.employmentStatus ||
-      !formData.employmentStatus ||
-      !formData.accommodationRequests ||
-      !formData.email
+      !formData.accommodationRequests
     ) {
       alert("Please fill all the fields");
       return;
@@ -52,38 +49,37 @@ function App() {
 
     uploadImage.on(
       "state_changed",
-      (snapshot) => {
-        const progressPercent = Math.round(
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        );
-      },
       (err) => {
         console.log(err);
       },
       () => {
         setFormData({
-          title: "",
-          description: "",
+          name: "",
+          id: "",
+          department: "",
+          email: "",
+          employmentStatus: "",
+          accommodationRequests: "",
           image: "",
         });
 
         getDownloadURL(uploadImage.snapshot.ref).then((url) => {
-          const articleRef = collection(db, "Articles");
-          addDoc(articleRef, {
+          const requestRef = collection(db, "requests");
+          addDoc(requestRef, {
             name: formData.name,
             id: formData.id,
             department: formData.department,
             email: formData.email,
             employmentStatus: formData.employmentStatus,
             accommodationRequests: formData.accommodationRequests,
-            document: "",
+            imageUrl: url,
             createdAt: Timestamp.now().toDate(),
           })
             .then(() => {
-              toast("Article added successfully", { type: "success" });
+              toast("Request added successfully", { type: "success" });
             })
             .catch((err) => {
-              toast("Error adding article", { type: "error" });
+              toast("Error adding request", { type: "error" });
             });
         });
       }
@@ -99,6 +95,7 @@ function App() {
         requestArr.push({ ...doc.data(), id: doc.id });
       });
       setRequests(requestArr);
+      console.log(requests);
     });
     return () => unsubscribe();
   }, []);
@@ -140,7 +137,11 @@ function App() {
           </TabList>
           <TabPanels>
             <TabPanel>
-              <SubmissionForm formData={formData} setFormData={setFormData} />
+              <SubmissionForm
+                formData={formData}
+                setFormData={setFormData}
+                submitHandler={submitHandler}
+              />
             </TabPanel>
             <TabPanel>
               <SubmissionLookup requests={requests} />

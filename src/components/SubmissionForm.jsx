@@ -1,12 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   VStack,
   FormControl,
   FormLabel,
   Input,
-  InputGroup,
   Button,
-  InputRightElement,
 } from "@chakra-ui/react";
 
 function SignUp({ formData, setFormData, submitHandler }) {

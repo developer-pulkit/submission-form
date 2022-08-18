@@ -12,8 +12,8 @@ import {
 } from "@chakra-ui/react";
 
 function SubmissionLookup({ requests }) {
+  const searchData = requests;
   const [data, setData] = useState([]);
-  const [searchData, setSearchData] = useState(requests);
   const [value, setValue] = useState("");
 
   const handleFilter = (e) => {
