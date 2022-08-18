@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   Thead,
@@ -12,30 +12,24 @@ import {
 } from "@chakra-ui/react";
 
 function SubmissionLookup({ requests }) {
-  const searchData = requests;
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(requests);
   const [value, setValue] = useState("");
+  console.log(data);
 
-  const handleFilter = (e) => {
-    if (e.target.value === "") {
-      setData(searchData);
-    } else {
-      const filterResult = searchData.filter(
+  const handleFilter = () => {
+    if (!value) {
+      const filterResult = requests.filter(
         (request) =>
-          request.name.toLowerCase().includes(e.target.value.toLowerCase()) ||
-          request.id.toLowerCase().includes(e.target.value.toLowerCase()) ||
-          request.email.toLowerCase().includes(e.target.value.toLowerCase()) ||
-          request.department
-            .toLowerCase()
-            .includes(e.target.value.toLowerCase()) ||
-          request.employmentStatus
-            .toLowerCase()
-            .includes(e.target.value.toLowerCase())
+          request.name.toLowerCase().includes(value.toLowerCase()) ||
+          request.id.toLowerCase().includes(value.toLowerCase()) ||
+          request.email.toLowerCase().includes(value.toLowerCase()) ||
+          request.department.toLowerCase().includes(value.toLowerCase()) ||
+          request.employmentStatus.toLowerCase().includes(value.toLowerCase())
       );
       setData(filterResult);
     }
-    setValue(e.target.value);
   };
+
   return (
     <>
       <InputGroup size="md">
@@ -44,7 +38,8 @@ function SubmissionLookup({ requests }) {
           type="text"
           placeholder="Filter by the Submission Form fields"
           value={value}
-          onInput={(e) => handleFilter(e)}
+          onChange={(e) => setValue(e.target.value)}
+          onInput={handleFilter}
         />
       </InputGroup>
       <TableContainer>
@@ -61,7 +56,7 @@ function SubmissionLookup({ requests }) {
           <Tbody>
             {data.map((request) => {
               return (
-                <Tr>
+                <Tr key={request.id}>
                   <Td>{request.name}</Td>
                   <Td>{request.id}</Td>
                   <Td>{request.department}</Td>

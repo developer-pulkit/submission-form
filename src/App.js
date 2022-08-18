@@ -24,10 +24,9 @@ function App() {
     email: "",
     employmentStatus: "",
     accommodationRequests: "",
-    image: "",
   });
 
-  const submitHandler = () => {
+  const submitHandler = async () => {
     if (
       !formData.name ||
       !formData.id ||
@@ -40,62 +39,62 @@ function App() {
       return;
     }
 
+    const name = new Date().getTime() + formData.name;
     const storageRef = ref(
       storage,
       `/images/${Date.now()}${formData.image.name}`
     );
+    const uploadTask = uploadBytesResumable(storageRef, formData.image);
 
-    const uploadImage = uploadBytesResumable(storageRef, formData.image);
-
-    uploadImage.on(
+    uploadTask.on(
       "state_changed",
-      (err) => {
-        console.log(err);
+      (snapshot) => {
+        switch (snapshot.state) {
+          case "paused":
+            toast("Error adding request", { type: "error" });
+            break;
+          case "running":
+            toast("Request added successfully", { type: "success" });
+            break;
+          default:
+            break;
+        }
       },
-      () => {
-        setFormData({
-          name: "",
-          id: "",
-          department: "",
-          email: "",
-          employmentStatus: "",
-          accommodationRequests: "",
-          image: "",
-        });
-
-        getDownloadURL(uploadImage.snapshot.ref).then((url) => {
-          const requestRef = collection(db, "requests");
-          addDoc(requestRef, {
-            name: formData.name,
-            id: formData.id,
-            department: formData.department,
-            email: formData.email,
-            employmentStatus: formData.employmentStatus,
-            accommodationRequests: formData.accommodationRequests,
-            imageUrl: url,
-            createdAt: Timestamp.now().toDate(),
-          })
-            .then(() => {
-              toast("Request added successfully", { type: "success" });
-            })
-            .catch((err) => {
-              toast("Error adding request", { type: "error" });
-            });
-        });
-      }
+      (error) => {
+        console.log(error);
+      },
+      // () => {
+      setFormData({
+        name: "",
+        id: "",
+        department: "",
+        email: "",
+        employmentStatus: "",
+        accommodationRequests: "",
+        image: "",
+      })
     );
+
+    await addDoc(collection(db, "requests"), {
+      name: formData.name,
+      id: formData.id,
+      department: formData.department,
+      email: formData.email,
+      employmentStatus: formData.employmentStatus,
+      accommodationRequests: formData.accommodationRequests,
+      createdAt: Timestamp.now().toDate(),
+    });
   };
 
   // Read todo from firebase
   useEffect(() => {
-    const q = query(collection(db, "requets"));
+    const q = query(collection(db, "requests"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       let requestArr = [];
       querySnapshot.forEach((doc) => {
         requestArr.push({ ...doc.data(), id: doc.id });
       });
       setRequests(requestArr);
-      console.log(requests);
     });
     return () => unsubscribe();
   }, []);
